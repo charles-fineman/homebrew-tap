@@ -6,16 +6,35 @@ on:
       - main
   pull_request:
 
+permissions: {}
+
+defaults:
+  run:
+    shell: bash -xeuo pipefail {0}
+
 jobs:
   test-bot:
     strategy:
       matrix:
-        os: [macos-26]
+        # One macOS bottle, built on the oldest macOS Homebrew still supports.
+        # Homebrew serves a bottle built on an older macOS to newer ones (see
+        # `find_older_compatible_tag` in brew), so arm64_sequoia covers Sequoia,
+        # Tahoe and later. Intel macOS is Tier 3 from September 2026 and is not
+        # built.
+        os: [macos-15]
         include:
+          # Linux bottles carry no OS version. Both run in Homebrew's own image,
+          # which is published for amd64 and arm64.
           - os: ubuntu-latest
-            container: ghcr.io/homebrew/brew:main
+            container:
+              image: ghcr.io/homebrew/brew:main
+              options: --privileged
+          - os: ubuntu-24.04-arm
+            container:
+              image: ghcr.io/homebrew/brew:main
+              options: --privileged
     runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container }}
+    container: ${{ fromJSON(toJSON(matrix.container)) }} # zizmor: ignore[unpinned-images]
     permissions:
       actions: read
       checks: read
@@ -24,12 +43,12 @@ jobs:
     steps:
       - name: Set up Homebrew
         id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@main
+        uses: Homebrew/actions/setup-homebrew@f8d4222eb633e65c2a0157383cf80861fc7fae7f # 2026.09.07.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Homebrew Bundler RubyGems
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.set-up-homebrew.outputs.gems-path }}
           key: ${{ matrix.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
@@ -41,15 +60,21 @@ jobs:
 
       - run: brew test-bot --only-tap-syntax
 
-      # Full formula build + `test do` on PRs AND on push to main. This is a
-      # source tap with no bottles, so there is no pr-pull step to defer it to;
-      # running it on push means the initial merge and every automated release
-      # bump are build-tested, not just audited.
-      - run: brew test-bot --only-formulae
+      # Build, test and bottle every formula the PR changes. The root URL is
+      # where `brew pr-pull` (publish.yml) uploads the bottles and what the
+      # committed `bottle do` block points at: one GitHub Release on this repo,
+      # tagged `bottles`, holding every bottle. Bottle file names carry the
+      # formula, version, rebuild and platform, so they never collide.
+      #
+      # PRs only. Everything reaches main through a PR, and the commit that
+      # pr-pull pushes is made with GITHUB_TOKEN, which does not trigger
+      # workflows.
+      - run: brew test-bot --only-formulae --root-url=https://github.com/sofired/homebrew-tap/releases/download/bottles
+        if: github.event_name == 'pull_request'
 
       - name: Upload bottles as artifact
         if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bottles_${{ matrix.os }}
           path: '*.bottle.*'
