@@ -1,22 +1,23 @@
 # homebrew-tap
 
-Homebrew tap for [composemux](https://github.com/sofired/composemux) — a
-read-only terminal UI for Docker Compose logs.
+A [Homebrew](https://brew.sh) tap for [sofired](https://github.com/sofired)'s
+command-line tools.
 
-## Install
+## Usage
 
 ```sh
 brew tap sofired/tap
-brew install composemux
+brew install <formula>
 ```
 
-`brew tap sofired/tap` is a one-time step; afterwards `brew upgrade composemux`
-tracks new releases.
+`brew tap sofired/tap` is a one-time step; afterwards `brew upgrade` tracks new
+releases of anything installed from here.
 
 ## Formulae
 
-- [`composemux`](Formula/composemux.rb) — builds from source with `cargo`.
+| Formula | Description |
+| --- | --- |
+| [`composemux`](Formula/composemux.rb) | Read-only terminal UI for Docker Compose logs |
 
-The formula is updated automatically when composemux cuts a release. Report
-issues with composemux itself in the
-[main repository](https://github.com/sofired/composemux/issues), not here.
+Each formula is updated automatically when its upstream project cuts a release.
+Please report issues with a tool itself in that tool's own repository, not here.
