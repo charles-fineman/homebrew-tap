@@ -6,11 +6,11 @@ command-line tools.
 ## Usage
 
 ```sh
-brew tap sofired/tap
-brew install <formula>
+brew install sofired/tap/<formula>
 ```
 
-`brew tap sofired/tap` is a one-time step; afterwards `brew upgrade` tracks new
+Use the full name: it is what lets Homebrew 6+ trust the formula without a
+separate `brew tap` and `brew trust` step. `brew upgrade` then tracks new
 releases of anything installed from here.
 
 ## Formulae
