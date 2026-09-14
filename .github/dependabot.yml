@@ -1,0 +1,13 @@
+# Keep the tap's GitHub Actions current. Dependabot opens PRs against this repo,
+# so brew test-bot runs on each one (same-repo PR) before you merge.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # One grouped PR for all action bumps rather than one per action.
+    groups:
+      actions:
+        patterns:
+          - "*"
